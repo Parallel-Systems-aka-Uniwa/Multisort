@@ -1,12 +1,12 @@
 /*
- *  === Αρχείο: omp_msort.c ===
+ *  === File: omp_msort.c ===
  *
- *  Ονοματεπώνυμο: Αθανασίου Βασίλειος Ευάγγελος
- *  Αριθμός Μητρώου: 19390005
- *  Πρόγραμμα Σπουδών: ΠΑΔΑ
+ *  Full Name: Athanasiou Vasileios Evangelos
+ *  Student ID: 19390005
+ *  Degree Program: PADA
  *  
- *  Μεταγλώττιση: gcc -o omp_msort omp_msort.c -fopenmp
- *  Εκτέλεση: ./omp_msort A_unsort.txt A_sort.txt
+ *  Compilation: gcc -o omp_msort omp_msort.c -fopenmp
+ *  Execution: ./omp_msort A_unsort.txt A_sort.txt
  * 
  */
 #include <stdio.h>
@@ -24,20 +24,18 @@ int* pivotPartition(int *start, int *end);
 void swap(int *a, int *b);
 void merge(int *startA, int *endA, int *startB, int *endB, int *space);
 
-
-
 int main(int argc, char *argv[]) 
 {
-    int *A, *Space;                 // Ο πίνακας Α που θα ταξινομηθεί και ο πίνακας Space που θα χρησιμοποιηθεί για την ταξινόμηση
-    FILE *fpA_unsort, *fpA_sort;    // Αρχεία εξόδου για την αποθήκευση των πινάκων Α πριν και μετά την ταξινόμηση
-    int threads, size;              // Ο αριθμός των threads και το μέγεθος του πίνακα
-    int i;                          // Δείκτης επανάληψης
-    double start_time, end_time;    // Χρόνος εκτέλεσης του παράλληλου προγράμματος
+    int *A, *Space;                 // The array A to be sorted and the Space array used for sorting
+    FILE *fpA_unsort, *fpA_sort;     // Output files for storing array A before and after sorting
+    int threads, size;              // Number of threads and size of the array
+    int i;                          // Loop index
+    double start_time, end_time;    // Execution time of the parallel program
 
-/*
- *  Ορισμός του αριθμού των threads και άνοιγμα των αρχείων εξόδου 
- */
-    // Επιβεβαιώνουμε ότι οι παράμετροι είναι ακέραιοι
+    /*
+     *  Set the number of threads and open the output files 
+     */
+    // We confirm that the parameters are integers
     threads = T;
     size = N;
 
@@ -64,13 +62,13 @@ int main(int argc, char *argv[])
     }
 
     printf("Threads             : %d\n", threads);
-    printf("Matrix size         : %d\n", size);
+    printf("Array size          : %d\n", size);
     printf("Limit for quicksort : %d\n", LIMIT);
     printf("-----------------------------------\n");
 
-/*
- *  Δέσμευση μνήμης για τους πίνακες Α και Space
- */
+    /*
+     *  Memory allocation for arrays A and Space
+     */
     A = (int *) malloc(size * sizeof(int));
     if (A == NULL)
     {
@@ -85,27 +83,27 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-/*
- *  Αρχικοποίηση του πίνακα Α με τυχαίες τιμές
- */
+    /*
+     *  Initialize array A with random values
+     */
     srand(time(NULL));
 
     for (i = 0; i < size; i++)
     {
-        A[i] = rand() % 199 - 99;                  // Τιμές στο διάστημα [-99, 99]
-        A[i] = A[i] >= 0 ? A[i] + 10 : A[i] - 10;  // Τυχαία επιλογή προσήμου
+        A[i] = rand() % 199 - 99;                  // Values in the range [-99, 99]
+        A[i] = A[i] >= 0 ? A[i] + 10 : A[i] - 10;    // Randomly adjust the sign
     }
     
     printf("Before sorting\n");
     printf("-----------------------------------\n");
-    printf("The A has been stored in %s\n", argv[1]);
+    printf("The array A has been stored in %s\n", argv[1]);
     
     for (i = 0; i < size; i++)
         fprintf(fpA_unsort, "%d ", A[i]);
     printf("\n");
 
-// ================================= Έναρξη παράλληλου υπολογισμού =================================
-    // ---- Έναρξη χρόνου μέτρησης του παράλληλου προγράμματος ----
+// ================================= Start of Parallel Computation =================================
+    // ---- Start timing the parallel program ----
     start_time = omp_get_wtime();
 
     #pragma omp parallel
@@ -115,13 +113,13 @@ int main(int argc, char *argv[])
     }
 
     end_time = omp_get_wtime();
-    // ---- Λήξη χρόνου μέτρησης του παράλληλου προγράμματος ----
-// ================================= Λήξη παράλληλου υπολογισμού =================================
+    // ---- End timing the parallel program ----
+// ================================= End of Parallel Computation =================================
 
     printf("-----------------------------------\n");
     printf("After sorting\n");
     printf("-----------------------------------\n");
-    printf("The A has been stored in %s\n", argv[2]);
+    printf("The array A has been stored in %s\n", argv[2]);
     
     for (i = 0; i < size; i++)
         fprintf(fpA_sort, "%d ", A[i]);
@@ -140,53 +138,50 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
 /*
- * === Συνάρτηση multisort ===
- * Παράμετροι: 
- *    - int *start: Δείκτης στην αρχή του πίνακα που πρέπει να ταξινομηθεί.
- *    - int *space: Δείκτης σε έναν βοηθητικό πίνακα ίδιου μεγέθους με τον αρχικό,
- *                  που χρησιμοποιείται κατά τη συγχώνευση των τμημάτων.
- *    - int size: Το μέγεθος του πίνακα που θα ταξινομηθεί.
- * Επιστρέφει: 
- *      Τίποτα (void).
+ * === Function: multisort ===
+ * Parameters: 
+ *    - int *start: Pointer to the beginning of the array to be sorted.
+ *    - int *space: Pointer to a helper array of the same size as the original,
+ *                  used during the merging of segments.
+ *    - int size: The size of the array to be sorted.
+ * Returns: 
+ *      Nothing (void).
  *
- * Η συνάρτηση multisort υλοποιεί τον εναλλακτικό παράλληλο αλγόριθμο ταξινόμησης σε σχέση με τον mergesort.
- * Ο αλγόριθμος χωρίζει τον πίνακα σε τέσσερα ισομεγέθη τμήματα (quarters), ταξινομεί κάθε τμήμα 
- * αναδρομικά και στη συνέχεια συγχωνεύει τα ταξινομημένα τμήματα. Όταν το μέγεθος του
- * τμήματος είναι μικρότερο από το όριο LIMIT, χρησιμοποιείται ο ακολουθιακός αλγόριθμος quicksort
- * για την τοπική ταξινόμηση.
+ * The multisort function implements an alternative parallel sorting algorithm compared to mergesort.
+ * The algorithm divides the array into four equally sized segments, recursively sorts each segment,
+ * and then merges the sorted segments. When the segment size is smaller than the LIMIT, the sequential
+ * quicksort algorithm is used for local sorting.
  *
  */
 void multisort(int *start, int *space, int size)
 {
-    int quarter;                                // Το μέγεθος του τμήματος που θα διαχωριστεί
-    int *startA, *startB, *startC, *startD;     // Δείκτες στην αρχή των τεσσάρων τμημάτων
-    int *spaceA, *spaceB, *spaceC, *spaceD;     // Δείκτες στον προσωρινό πίνακα για τα τέσσερα τμήματα
+    int quarter;                                // The size of the segment to be split
+    int *startA, *startB, *startC, *startD;       // Pointers to the beginning of the four segments
+    int *spaceA, *spaceB, *spaceC, *spaceD;       // Pointers to the helper array segments
 
-/*
- *  Κριτήριο Τερματισμού: Αν το μέγεθος του τμήματος είναι μικρότερο από το όριο LIMIT, χρησιμοποιείται 
- *                        ο σειριακός αλγόριθμος quicksort που είναι πιο αποδοτικός για μικρά μεγέθη πινάκων.
- */
+    /*
+     *  Termination condition: If the segment size is smaller than LIMIT,
+     *  the sequential quicksort algorithm, which is more efficient for small arrays, is used.
+     */
     if (size < LIMIT)
     {
         quicksort(start, start + size - 1);
         return;
     }
 
-/*
- *  Φάση Ι: Διαχωρισμός του πίνακα σε τέσσερα ισομεγέθη τμήματα 
- */
+    /*
+     *  Phase I: Divide the array into four equal segments 
+     */
     quarter = size / 4;
     startA = start; spaceA = space; 
     startB = startA + quarter; spaceB = spaceA + quarter;
     startC = startB + quarter; spaceC = spaceB + quarter;
     startD = startC + quarter; spaceD = spaceC + quarter;
 
-/*
- *  Φάση ΙΙ: Αναδρομική κλήση της multisort για τα τέσσερα τμήματα με χρήση OpenMP tasks για εκτέλεση από διαφορετικά threads
- */
+    /*
+     *  Phase II: Recursively call multisort for the four segments using OpenMP tasks for execution on different threads
+     */
     #pragma omp task firstprivate(start, space, size)
     multisort(startA, spaceA, quarter);
 
@@ -201,9 +196,9 @@ void multisort(int *start, int *space, int size)
 
     #pragma omp taskwait
 
-/*
- *  Φάση ΙΙΙ: Παράλληλη συγχώνευση ανά δύο σε δύο τμήματα διπλάσιου μεγέθους
- */
+    /*
+     *  Phase III: Parallel merge of segments two by two to form segments of double size
+     */
     #pragma omp task firstprivate(start, space, size)
     merge(startA, startA + quarter - 1, startB, startB + quarter - 1, spaceA);
 
@@ -212,29 +207,26 @@ void multisort(int *start, int *space, int size)
 
     #pragma omp taskwait
 
-/*
- *  Φάση ΙV: Συγχώνευση των δύο εναπομείναντων τμημάτων μεταξύ τους
- */
+    /*
+     *  Phase IV: Merge the two remaining segments
+     */
     merge(spaceA, spaceC - 1, spaceC, spaceA + size - 1, startA);
 }
 
-
-
 /*
- * === Συνάρτηση quicksort ===
- * Παράμετροι: 
- *    - int *start: Δείκτης στην αρχή του τμήματος του πίνακα που πρέπει να ταξινομηθεί.
- *    - int *end: Δείκτης στο τέλος του τμήματος του πίνακα που πρέπει να ταξινομηθεί.
- * Επιστρέφει: 
- *      Τίποτα (void).
+ * === Function: quicksort ===
+ * Parameters: 
+ *    - int *start: Pointer to the beginning of the array segment to be sorted.
+ *    - int *end: Pointer to the end of the array segment to be sorted.
+ * Returns: 
+ *      Nothing (void).
  *
- * Η συνάρτηση quicksort υλοποιεί τον αναδρομικό αλγόριθμο γρήγορης ταξινόμησης.
- * 1. Επιλέγει ένα στοιχείο οδηγός (pivot) από το τμήμα του πίνακα που ταξινομείται, δηλαδή, ένα στοιχείο
- *    που βρίσκεται στην σωστή θέση ταξινόμησης.
- * 2. Τοποθετεί όλα τα στοιχεία μικρότερα ή ίσα με τον οδηγό στα αριστερά του
- *    και όλα τα μεγαλύτερα στα δεξιά του, διαχωρίζοντας τον πίνακα σε δύο υποπίνακες.
- * 3. Επαναλαμβάνει αναδρομικά τη διαδικασία για τον αριστερό και δεξιό υποπίνακα
- *    μέχρι να επιτευχθεί η πλήρης ταξινόμηση.
+ * The quicksort function implements the recursive quicksort algorithm.
+ * 1. It selects a pivot element from the segment to be sorted, that is, an element
+ *    that is in its correct sorted position.
+ * 2. It places all elements less than or equal to the pivot to its left and all greater elements to its right,
+ *    partitioning the array into two subarrays.
+ * 3. It recursively repeats the process for the left and right subarrays until the entire array is sorted.
  *
  */
 void quicksort(int *start, int *end)
@@ -243,27 +235,25 @@ void quicksort(int *start, int *end)
 
     if (start < end)
     {
-        pvt = pivotPartition(start, end); // Επιλογή στοιχείου οδηγού (pivot) και διαχωρισμός του πίνακα γύρω από αυτό
-        quicksort(start, pvt - 1);        // Αναδρομική κλήση της quicksort για τον αριστερό υποπίνακα
-        quicksort(pvt + 1, end);          // Αναδρομική κλήση της quicksort για τον δεξιό υποπίνακα
+        pvt = pivotPartition(start, end); // Select a pivot element and partition the array around it
+        quicksort(start, pvt - 1);         // Recursive call for the left subarray
+        quicksort(pvt + 1, end);           // Recursive call for the right subarray
     }
 }
 
-
-
 /*
- * === Συνάρτηση pivotPartition ===
- * Παράμετροι:
- *    - int *start: Δείκτης στην αρχή του τμήματος του πίνακα που πρέπει να διαχωριστεί.
- *    - int *end: Δείκτης στο τέλος του τμήματος του πίνακα που πρέπει να διαχωριστεί.
- * Επιστρέφει: 
- *    - int*: Δείκτης στο νέο σημείο όπου βρίσκεται ο οδηγός (pivot) μετά τον διαχωρισμό.
+ * === Function: pivotPartition ===
+ * Parameters:
+ *    - int *start: Pointer to the beginning of the array segment to be partitioned.
+ *    - int *end: Pointer to the end of the array segment to be partitioned.
+ * Returns: 
+ *    - int*: Pointer to the new location of the pivot after partitioning.
  *
- * Η συνάρτηση pivotPartition με την τεχνική δύο δεικτών εκτελεί τον διαχωρισμό του πίνακα γύρω από ένα στοιχείο οδηγός (pivot).
- * 1. Το pivot ορίζεται αρχικά ως το τελευταίο στοιχείο του τμήματος του πίνακα.
- * 2. Μετακινεί όλα τα στοιχεία μικρότερα ή ίσα με το pivot στην αριστερή πλευρά του πίνακα,
- *    ενώ τα μεγαλύτερα παραμένουν στη δεξιά πλευρά.
- * 3. Τέλος, το pivot τοποθετείται στη σωστή του θέση, δηλαδή μεταξύ των μικρότερων και των μεγαλύτερων στοιχείων.
+ * The pivotPartition function uses the two-pointer technique to partition the array around a pivot element.
+ * 1. The pivot is initially defined as the last element of the segment.
+ * 2. It moves all elements less than or equal to the pivot to the left side of the array,
+ *    while the greater elements remain on the right side.
+ * 3. Finally, it places the pivot in its correct position, i.e., between the smaller and larger elements.
  *
  */
 int* pivotPartition(int *start, int *end)
@@ -271,38 +261,36 @@ int* pivotPartition(int *start, int *end)
     int *pvt;        
     int *i, *j;       
 
-    pvt = end;        // Αρχικοποίηση του pivot στο τελευταίο στοιχείο του τμήματος
-    i = start - 1;    // Δείκτης στο τελευταίο στοιχείο μικρότερο ή ίσο με το pivot
+    pvt = end;        // Initialize the pivot to the last element of the segment
+    i = start - 1;    // Pointer to the last element less than or equal to the pivot
 
-    // Επανάληψη για όλα τα στοιχεία από start μέχρι end-1
+    // Loop over all elements from start to end-1
     for (j = start; j < end; j++)  
     {
-        // Αν το τρέχον στοιχείο *j είναι μικρότερο ή ίσο με το pivot
+        // If the current element *j is less than or equal to the pivot
         if (*j <= *pvt)  
         {
-            i++;          // Μετακινείται ο δείκτης i προς τα δεξιά
-            swap(i, j);   // Ανταλλαγή του *i (πρώτο μεγαλύτερο) με το *j (τρέχον στοιχείο)
+            i++;          // Move pointer i to the right
+            swap(i, j);   // Swap *i (first element greater than pivot) with *j (current element)
         }
     }
 
-    // Τοποθέτηση του pivot στη σωστή του θέση (μετά το τελευταίο μικρότερο στοιχείο)
+    // Place the pivot in its correct position (after the last element less than it)
     swap(i + 1, pvt);  
 
-    // Επιστροφή του δείκτη στη νέα θέση του pivot
+    // Return pointer to the new position of the pivot
     return i + 1; 
 }
 
-
 /*
- * === Συνάρτηση swap ===
- * Παράμετροι:
- *    - int *a: Δείκτης στο πρώτο στοιχείο που θα ανταλλαγεί.
- *    - int *b: Δείκτης στο δεύτερο στοιχείο που θα ανταλλαγεί.
- * Επιστρέφει: 
- *      Τίποτα (void).
+ * === Function: swap ===
+ * Parameters:
+ *    - int *a: Pointer to the first element to be swapped.
+ *    - int *b: Pointer to the second element to be swapped.
+ * Returns: 
+ *      Nothing (void).
  *
- * Η συνάρτηση swap πραγματοποιεί την ανταλλαγή (swap) των τιμών δύο μεταβλητών 
- * που δείχνονται από τους δείκτες a και b. 
+ * The swap function exchanges the values of two variables pointed to by a and b.
  *
  */
 void swap(int *a, int *b)
@@ -314,71 +302,69 @@ void swap(int *a, int *b)
     *b = temp;
 }
 
-
 /*
- * === Συνάρτηση merge ===
- * Παράμετροι:
- *    - int *startA: Δείκτης στο πρώτο στοιχείο του πρώτου υποπίνακα (A).
- *    - int *endA: Δείκτης στο τελευταίο στοιχείο του πρώτου υποπίνακα (A).
- *    - int *startB: Δείκτης στο πρώτο στοιχείο του δεύτερου υποπίνακα (B).
- *    - int *endB: Δείκτης στο τελευταίο στοιχείο του δεύτερου υποπίνακα (B).
- *    - int *space: Δείκτης σε προσωρινό πίνακα αποθήκευσης.
- * Επιστρέφει: 
- *      Τίποτα (void).
+ * === Function: merge ===
+ * Parameters:
+ *    - int *startA: Pointer to the first element of the first subarray (A).
+ *    - int *endA: Pointer to the last element of the first subarray (A).
+ *    - int *startB: Pointer to the first element of the second subarray (B).
+ *    - int *endB: Pointer to the last element of the second subarray (B).
+ *    - int *space: Pointer to a temporary storage array.
+ * Returns: 
+ *      Nothing (void).
  *
- * Η συνάρτηση merge συγχωνεύει δύο ταξινομημένα υποτμήματα (A και B) σε έναν
- * ενιαίο ταξινομημένο πίνακα. Ο συγχωνευμένος πίνακας αποθηκεύεται αρχικά
- * στον προσωρινό πίνακα space και στη συνέχεια επιστρέφεται στον αρχικό πίνακα.
+ * The merge function combines two sorted subarrays (A and B) into a single sorted array.
+ * The merged array is first stored in the temporary array 'space' and then copied back to the original array.
  *
  */
 void merge(int *startA, int *endA, int *startB, int *endB, int *space)
 {
-    int *i = startA, *j = startB, *k = space; // Αρχικοποίηση δεικτών για τα τμήματα A, B και τον προσωρινό πίνακα συγχώνευσης
+    int *i = startA, *j = startB, *k = space; // Initialize pointers for subarrays A, B, and the temporary merge array
 
-/*
- *  Συγχώνευση των δύο ταξινομημένων τμημάτων στον προσωρινό πίνακα
- */
-    while (i <= endA && j <= endB) // Όσο υπάρχουν στοιχεία και στα δύο τμήματα
+    /*
+     *  Merge the two sorted subarrays into the temporary array
+     */
+    while (i <= endA && j <= endB) // While there are elements in both subarrays
     {
-        if (*i <= *j) // Αν το τρέχον στοιχείο του A είναι μικρότερο ή ίσο με το τρέχον του B
+        if (*i <= *j) // If the current element in A is less than or equal to the current element in B
         {
-            *k = *i; // Αποθήκευση του στοιχείου από το A στον προσωρινό πίνακα
-            i++;     // Μετακίνηση στον επόμενο δείκτη του A
+            *k = *i; // Store the element from A into the temporary array
+            i++;     // Move to the next element in A
         }
         else
         {
-            *k = *j; // Αποθήκευση του στοιχείου από το B στον προσωρινό πίνακα
-            j++;     // Μετακίνηση στον επόμενο δείκτη του B
+            *k = *j; // Store the element from B into the temporary array
+            j++;     // Move to the next element in B
         }
-        k++; // Μετακίνηση στον επόμενο δείκτη του προσωρινού πίνακα
+        k++; // Move to the next position in the temporary array
     }
 
-/*
- *  Αποθήκευση των υπολοίπων στοιχείων του A (αν υπάρχουν)
- */ 
+    /*
+     *  Store any remaining elements from A (if any)
+     */ 
     while (i <= endA)
     {
-        *k = *i; // Αποθήκευση του στοιχείου από το A στον προσωρινό πίνακα
-        i++;     // Μετακίνηση στον επόμενο δείκτη του A
-        k++;     // Μετακίνηση στον επόμενο δείκτη του προσωρινού πίνακα
+        *k = *i;
+        i++;
+        k++;
     }
 
-/*
- *  Αποθήκευση των υπολοίπων στοιχείων του B (αν υπάρχουν)
- */ 
+    /*
+     *  Store any remaining elements from B (if any)
+     */ 
     while (j <= endB)
     {
-        *k = *j; // Αποθήκευση του στοιχείου από το B στον προσωρινό πίνακα
-        j++;     // Μετακίνηση στον επόμενο δείκτη του B
-        k++;     // Μετακίνηση στον επόμενο δείκτη του προσωρινού πίνακα
+        *k = *j;
+        j++;
+        k++;
     }
 
-/*
- *  Αποθήκευση των στοιχείων από τον προσωρινό πίνακα πίσω στον αρχικό πίνακα
- */ 
+    /*
+     *  Copy the elements from the temporary array back to the original array
+     */ 
     for (i = space; i < k; i++)
     {
-        *startA = *i; // Αποθήκευση του στοιχείου από τον προσωρινό πίνακα στον αρχικό πίνακα
-        startA++;     // Μετακίνηση στον επόμενο δείκτη του αρχικού πίνακα
+        *startA = *i;
+        startA++;
     }
 }
